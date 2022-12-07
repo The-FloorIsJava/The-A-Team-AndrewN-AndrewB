@@ -45,19 +45,23 @@ async function submitSignupForm(event) {
     //     .then(response => console.log(response))
     //     .catch(error => console.log(error))
 
-    console.log( await postData("/register", data))
+    console.log( await customFetch("/register", data)) // TODO
     ROOT.innerHTML = `<h3>Thank you for registering</h3>`
 }
 
-async function postData(url="", data={}) {
+async function customFetch(url="", data={}) {
     try {
         const response = await fetch(URL + url, {method: "POST", mode: "cors", body: JSON.stringify(data)})
 
-        return {
+        const result = {
             successful: response.ok,
             headers: await response.headers,
-            body: await response.json()
         };
+
+        if (result.successful) result.body = await response.json();
+        else result.body = {}
+
+        return result
 
     } catch (e) {
         console.error(e)
