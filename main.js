@@ -35,7 +35,7 @@ async function submitLoginForm(event) {
     if (res.successful) {
         window.localStorage.setItem("token", res.authorization)
         ROOT.innerHTML = `<h3>Thank you for logging in</h3>
-<a href="javascript:void(0)" onclick="allTickets()">all tickets</a>`
+<a href="javascript:void(0)" onclick="allTickets()" class="link-light">All Tickets</a>`
         document.getElementById("auth").innerHTML = `<p class="navbar-text">Welcome ${res.body.employeeEmail}</p>
 <a class="nav-link" href="javascript:void(0)" onclick="logout()">Logout</a>`
     } else {
