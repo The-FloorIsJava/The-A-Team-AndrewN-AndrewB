@@ -1,7 +1,7 @@
 const URL = "http://127.0.0.1:8080"
 
 const ROOT = document.getElementById("root")
-
+const MESSAGE = document.getElementById("message")
 
 
 async function submitSignupForm(event) {
@@ -15,9 +15,31 @@ async function submitSignupForm(event) {
 
     const res = await customFetch("/register","POST", data) // TODO
     if (res.successful) {
-        ROOT.innerHTML = `<h3>Thank you for registering. Please login.</h3>`
+        let message = `<h3>Thank you for registering. Please login.</h3>`
+        let root = ''
+        rootAndMessage(root, message)
     } else {
         document.getElementById("error-message").innerHTML = "email is already in use."
+    }
+
+}
+
+async function submitTicketForm(event) {
+    event.preventDefault()
+
+    let form = document.getElementById("ticketform").elements
+    let data = {
+        amount: form[0].value,
+        requestType: form[1].value
+    }
+
+    const res = await customFetch("/employeetix","POST", data) // TODO
+    if (res.successful) {
+        let message = `<h3>Thank you for your request.</h3>`
+        let root = ''
+        rootAndMessage(root, message)
+    } else {
+        document.getElementById("error-message").innerHTML = "Ticket not created."
     }
 
 }
@@ -34,12 +56,15 @@ async function submitLoginForm(event) {
     const res = await customFetch("/login","POST", data) // TODO
     if (res.successful) {
         window.localStorage.setItem("token", res.authorization)
-        ROOT.innerHTML = `<h3>Thank you for logging in</h3>
-<a href="javascript:void(0)" onclick="allTickets()" class="link-light">All Tickets</a>`
+        let message = `<h3>Thank you for logging in!</h3>`
+        let root = ''
+        rootAndMessage(root, message)
+        document.getElementById("nav").innerHTML = `<a href="javascript:void(0)" onclick="allTickets()" class="nav-link">Tickets</a>
+            <a href="javascript:void(0)" onclick="ticketForm()" class="nav-link">Submit Request</a>`
         document.getElementById("auth").innerHTML = `<p class="navbar-text">Welcome ${res.body.employeeEmail}</p>
-<a class="nav-link" href="javascript:void(0)" onclick="logout()">Logout</a>`
+            <a class="nav-link" href="javascript:void(0)" onclick="logout()">Logout</a>`
     } else {
-        document.getElementById("error-message").innerHTML = "invalid credentials."
+        document.getElementById("error-message").innerHTML = "Invalid credentials."
     }
 
 }
@@ -78,14 +103,15 @@ async function logout() {
     const res = await customFetch("/logout","DELETE") // TODO
     if (res.successful) {
         window.localStorage.setItem("token", "")
-        ROOT.innerHTML = `<h3>Thank you for using our application.</h3>`
+        let message = `<h3>Thank you for using our application.</h3>`
+        let root = ''
+        rootAndMessage(root, message)
         document.getElementById("auth").innerHTML = `<div id="auth" class="navbar-nav">
                         <a class="nav-link" href="javascript:void(0)" onclick="signUpForm()">Sign Up</a>
                         <a class="nav-link" href="javascript:void(0)" onclick="loginForm()">Login</a>
                     </div>`
-    } else {
-        document.getElementById("error-message").innerHTML = "invalid credentials."
-    }
+        document.getElementById("nav").innerHTML = ''
+    } 
 
 }
 
@@ -93,20 +119,95 @@ async function allTickets() {
 
     const res = await customFetch("/employeetix","GET") // TODO
     if (res.successful) {
-        let html = `<table class="table table-dark table-striped m-2"><thead><tr><th>ID</th><th>Requester</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>`
+        let html = `<div class="btn-group m-2 d-flex justify-content-center" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-light" onclick="pendingTickets()">Pending</button>
+            <button type="button" class="btn btn-light" onclick="approvedTickets()">Approved</button>
+            <button type="button" class="btn btn-light" onclick="deniedTickets()">Denied</button>
+        </div>`
+        html += `<table class="table table-dark table-striped m-2"><thead><tr><th>ID</th><th>Requester</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>`
         for (el of res.body) {
             html += `<tr><th>${el.ticketId}</th><td>${el.requester}</td><td>${el.requestType}</td><td>${el.amount}</td><td>${el.isTicketApproved}</td></tr>`
         }
         html += "</tbody></table>"
-        ROOT.innerHTML = html
+        let message = ``
+        let root = html
+        rootAndMessage(root, message)
     } else {
         document.getElementById("error-message").innerHTML = "invalid credentials."
     }
 
 }
 
+async function pendingTickets() {
+
+    const res = await customFetch("/employeetix/pending","GET") // TODO
+    if (res.successful) {
+        let html = `<div class="btn-group m-2 d-flex justify-content-center" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-light" onclick="allTickets()">All</button>
+            <button type="button" class="btn btn-light" onclick="approvedTickets()">Approved</button>
+            <button type="button" class="btn btn-light" onclick="deniedTickets()">Denied</button>
+        </div>`
+        html += `<table class="table table-dark table-striped m-2"><thead><tr><th>ID</th><th>Requester</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>`
+        for (el of res.body) {
+            html += `<tr><th>${el.ticketId}</th><td>${el.requester}</td><td>${el.requestType}</td><td>${el.amount}</td><td>${el.isTicketApproved}</td></tr>`
+        }
+        html += "</tbody></table>"
+        let message = ``
+        let root = html
+        rootAndMessage(root, message)
+    } else {
+        document.getElementById("error-message").innerHTML = "invalid credentials."
+    }
+
+}
+async function approvedTickets() {
+
+    const res = await customFetch("/employeetix/approved","GET") // TODO
+    if (res.successful) {
+        let html = `<div class="btn-group m-2 d-flex justify-content-center" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-light" onclick="allTickets()">All</button>
+            <button type="button" class="btn btn-light" onclick="pendingTickets()">Pending</button>
+            <button type="button" class="btn btn-light" onclick="deniedTickets()">Denied</button>
+        </div>`
+        html += `<table class="table table-dark table-striped m-2"><thead><tr><th>ID</th><th>Requester</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>`
+        for (el of res.body) {
+            html += `<tr><th>${el.ticketId}</th><td>${el.requester}</td><td>${el.requestType}</td><td>${el.amount}</td><td>${el.isTicketApproved}</td></tr>`
+        }
+        html += "</tbody></table>"
+        let message = ``
+        let root = html
+        rootAndMessage(root, message)
+    } else {
+        document.getElementById("error-message").innerHTML = "invalid credentials."
+    }
+
+}
+async function deniedTickets() {
+
+    const res = await customFetch("/employeetix/denied","GET") // TODO
+    if (res.successful) {
+        let html = `<div class="btn-group m-2 d-flex justify-content-center" role="group" aria-label="Basic example">
+            <button type="button" class="btn btn-light" onclick="allTickets()">All</button>
+            <button type="button" class="btn btn-light" onclick="pendingTickets()">Pending</button>
+            <button type="button" class="btn btn-light" onclick="approvedTickets()">Approved</button>
+        </div>`
+        html += `<table class="table table-dark table-striped m-2"><thead><tr><th>ID</th><th>Requester</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>`
+        for (el of res.body) {
+            html += `<tr><th>${el.ticketId}</th><td>${el.requester}</td><td>${el.requestType}</td><td>${el.amount}</td><td>${el.isTicketApproved}</td></tr>`
+        }
+        html += "</tbody></table>"
+        let message = ``
+        let root = html
+        rootAndMessage(root, message)
+    } else {
+        document.getElementById("error-message").innerHTML = "invalid credentials."
+    }
+
+}
+
+
 function signUpForm() {
-    ROOT.innerHTML = `<form id="signupform" onsubmit="submitSignupForm(event)">
+    let root = `<form id="signupform" onsubmit="submitSignupForm(event)">
           <h1>Sign Up</h1>
           <p>Please fill in this form to create an account.</p>
           <p id="error-message" class="text-danger"></p>
@@ -134,10 +235,12 @@ function signUpForm() {
             <button type="submit" class="btn btn-success">Sign Up</button>
           </div>
       </form>`
+    let message = ``
+    rootAndMessage(root, message)
 }
 
 function loginForm() {
-    ROOT.innerHTML = `<form id="loginform" onsubmit="submitLoginForm(event)">
+    let root = `<form id="loginform" onsubmit="submitLoginForm(event)">
           <h1>Login</h1>
           <p>Please fill in this form to log in.</p>
           <p id="error-message" class="text-danger"></p>
@@ -158,4 +261,37 @@ function loginForm() {
             <button type="submit" class="btn btn-success">Login</button>
           </div>
       </form>`
+    let message = ``
+    rootAndMessage(root, message)
+}
+
+function ticketForm() {
+    let root = `<form id="ticketform" onsubmit="submitTicketForm(event)">
+          <h1>Ticket Request</h1>
+          <p>Please fill in this form to submit a reimbursement request.</p>
+          <p id="error-message" class="text-danger"></p>
+          <hr>
+          
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="amount">Amount</span>
+            <input name="amount" type="number" class="form-control" placeholder="Enter Amount Here" aria-label="amount" aria-describedby="amount" required>
+          </div>
+          
+          <div class="input-group mb-3">
+            <span class="input-group-text" id="type">Type</span>
+            <input name="type" type="text" class="form-control" placeholder="Enter Description" aria-label="type" aria-describedby="type" required>
+          </div>
+      
+          <div class="clearfix">
+            <button type="reset" class="btn btn-danger">Reset</button>
+            <button type="submit" class="btn btn-success">Submit</button>
+          </div>
+      </form>`
+    let message = ``
+    rootAndMessage(root, message)
+}
+
+function rootAndMessage(root = '', message = '') {
+    MESSAGE.innerHTML = message
+    ROOT.innerHTML = root
 }
