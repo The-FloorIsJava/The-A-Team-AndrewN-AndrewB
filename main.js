@@ -93,11 +93,11 @@ async function allTickets() {
 
     const res = await customFetch("/employeetix","GET") // TODO
     if (res.successful) {
-        let html = "<ul>"
+        let html = `<table class="table table-dark table-striped m-2"><thead><tr><th>ID</th><th>Requester</th><th>Type</th><th>Amount</th><th>Status</th></tr></thead><tbody>`
         for (el of res.body) {
-            html += `<li>${el.amount}, ${el.ticketId}, ${el.requestType}, ${el.isTicketApproved}, ${el.requester}</li>`
+            html += `<tr><th>${el.ticketId}</th><td>${el.requester}</td><td>${el.requestType}</td><td>${el.amount}</td><td>${el.isTicketApproved}</td></tr>`
         }
-        html += "</ul>"
+        html += "</tbody></table>"
         ROOT.innerHTML = html
     } else {
         document.getElementById("error-message").innerHTML = "invalid credentials."
