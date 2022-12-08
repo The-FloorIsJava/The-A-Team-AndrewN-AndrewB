@@ -13,10 +13,6 @@ async function submitSignupForm(event) {
         employeePassword: form[1].value
     }
 
-    // let response = fetch(URL + "/register", {method: "POST", mode: "cors", body: JSON.stringify(data)})
-    //     .then(response => console.log(response))
-    //     .catch(error => console.log(error))
-
     const res = await customFetch("/register","POST", data) // TODO
     if (res.successful) {
         ROOT.innerHTML = `<h3>Thank you for registering. Please login.</h3>`
@@ -35,14 +31,11 @@ async function submitLoginForm(event) {
         employeePassword: form[1].value
     }
 
-    // let response = fetch(URL + "/register", {method: "POST", mode: "cors", body: JSON.stringify(data)})
-    //     .then(response => console.log(response))
-    //     .catch(error => console.log(error))
-
     const res = await customFetch("/login","POST", data) // TODO
     if (res.successful) {
         window.localStorage.setItem("token", res.authorization)
-        ROOT.innerHTML = `<h3>Thank you for logging in</h3>`
+        ROOT.innerHTML = `<h3>Thank you for logging in</h3>
+<a href="javascript:void(0)" onclick="allTickets()">all tickets</a>`
         document.getElementById("auth").innerHTML = `<p class="navbar-text">Welcome ${res.body.employeeEmail}</p>
 <a class="nav-link" href="javascript:void(0)" onclick="logout()">Logout</a>`
     } else {
@@ -56,14 +49,20 @@ async function submitLoginForm(event) {
 async function customFetch(url="",method="POST", data={}) {
     try {
         let token = window.localStorage.getItem("token")
-        const response = await fetch(URL + url, {method: method, mode: "cors",headers: {Authorization: token}, body: JSON.stringify(data)})
+        let response;
+        if (method === "GET") {
+            response = await fetch(URL + url, {method: method, mode: "cors", headers: {Authorization: token}})
+        } else {
+            response = await fetch(URL + url, {method: method, mode: "cors", headers: {Authorization: token}, body: JSON.stringify(data)})
+        }
+
         console.log(...response.headers)
         const result = {
             successful: response.ok,
             authorization: response.headers.get("authorization"),
         };
 
-        if (result.successful && method === "POST") result.body = await response.json();
+        if (result.successful && method !== "DELETE") result.body = await response.json();
         else result.body = {}
         console.log(result)
 
@@ -84,6 +83,22 @@ async function logout() {
                         <a class="nav-link" href="javascript:void(0)" onclick="signUpForm()">Sign Up</a>
                         <a class="nav-link" href="javascript:void(0)" onclick="loginForm()">Login</a>
                     </div>`
+    } else {
+        document.getElementById("error-message").innerHTML = "invalid credentials."
+    }
+
+}
+
+async function allTickets() {
+
+    const res = await customFetch("/employeetix","GET") // TODO
+    if (res.successful) {
+        let html = "<ul>"
+        for (el of res.body) {
+            html += `<li>${el.amount}, ${el.ticketId}, ${el.requestType}, ${el.isTicketApproved}, ${el.requester}</li>`
+        }
+        html += "</ul>"
+        ROOT.innerHTML = html
     } else {
         document.getElementById("error-message").innerHTML = "invalid credentials."
     }
