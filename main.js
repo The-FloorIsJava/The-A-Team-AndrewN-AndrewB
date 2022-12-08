@@ -56,13 +56,19 @@ async function submitLoginForm(event) {
     const res = await customFetch("/login","POST", data) // TODO
     if (res.successful) {
         window.localStorage.setItem("token", res.authorization)
+        window.localStorage.setItem("manager", res.body.isManagerTrue)
         let message = `<h3>Thank you for logging in!</h3>`
         let root = ''
         rootAndMessage(root, message)
-        document.getElementById("nav").innerHTML = `<a href="javascript:void(0)" onclick="allTickets()" class="nav-link">Tickets</a>
+        let nav = `<a href="javascript:void(0)" onclick="allTickets()" class="nav-link">Tickets</a>
             <a href="javascript:void(0)" onclick="ticketForm()" class="nav-link">Submit Request</a>`
+        if (res.body.isManagerTrue){
+            nav += `<a href="javascript:void(0)" onclick="getPending()" class="nav-link">Process Tickets</a>`
+        }
         document.getElementById("auth").innerHTML = `<p class="navbar-text">Welcome ${res.body.employeeEmail}</p>
             <a class="nav-link" href="javascript:void(0)" onclick="logout()">Logout</a>`
+        document.getElementById("nav").innerHTML = nav
+        
     } else {
         document.getElementById("error-message").innerHTML = "Invalid credentials."
     }
@@ -205,6 +211,41 @@ async function deniedTickets() {
 
 }
 
+async function getPending() {
+
+    const res = await customFetch("/process", "GET")
+    if (res.successful) {
+        let html = `<table class="table table-dark table-striped m-2"><thead><tr><th>ID</th><th>Requester</th><th>Type</th><th>Amount</th><th>Status</th><th>Process</th></tr></thead><tbody>`
+        for (el of res.body) {
+            html += `<tr><th>${el.ticketId}</th>
+            <td>${el.requester}</td>
+            <td>${el.requestType}</td>
+            <td>${el.amount}</td>
+            <td>${el.isTicketApproved}</td>
+            <td><a class="m-2 text-success" onclick="approveTicket(${el.ticketId})"><i class="bi bi-xbox"></i></a><a class="m-2 text-danger" onclick="denyTicket(${el.ticketId})"><i class="bi bi-nintendo-switch"></i></a></td></tr>`
+        }
+        html += "</tbody></table>"
+        let message = ``
+        let root = html
+        rootAndMessage(root, message)
+    } else {
+        document.getElementById("error-message").innerHTML = "invalid credentials."
+    }
+}
+
+async function approveTicket (id) {
+    const res = await customFetch("/process", "POST", {status: "Approved", id : id})
+    if (res.successful) {
+        getPending()
+    }
+}
+
+async function denyTicket (id) {
+    const res = await customFetch("/process", "POST", {status: "Denied", id : id})
+    if (res.successful) {
+        getPending()
+    }
+}
 
 function signUpForm() {
     let root = `<form id="signupform" onsubmit="submitSignupForm(event)">
